@@ -6,7 +6,14 @@ const AddNote = () => {
     const context = useContext(noteContext);
     const {addNote} = context;
 
-    const [note, setNote] = useState({title:"",description:"",tag:""});
+    const [note, setNote] = useState({
+      title: "",
+      description: "",
+      author: "",
+      bookID: "",
+      quantity: "",
+      borrower: "",
+    });
 
     const onChange = (e)=>{
         // We are using spread (...) syntax, Spread syntax can be used when all elements from an object
@@ -16,13 +23,20 @@ const AddNote = () => {
 
     const handleClick = (e)=>{
         e.preventDefault();
-        addNote(note.title,note.description,note.tag);
-        setNote({title:"",description:"",tag:""});
+        addNote(note.title, note.description, note.author,note.bookID,note.quantity,note.borrower);
+        setNote({
+          title: "",
+          description: "",
+          author: "",
+          bookID: "",
+          quantity: "",
+          borrower: "",
+        });
         Notiflix.Notify.success('Notes Added Succesfully  ');
     }
   return (
     <div>
-      <h1 className="my-3">Add a Note</h1>
+      <h1 className="my-3">Add a Record</h1>
       <form className="my-3">
         <div className="mb-3">
           <label htmlFor="title" className="form-label">
@@ -32,7 +46,7 @@ const AddNote = () => {
             type="text"
             className="form-control"
             id="title"
-            name="title"    
+            name="title"
             aria-describedby="emailHelp"
             onChange={onChange}
             value={note.title}
@@ -49,23 +63,67 @@ const AddNote = () => {
             name="description"
             onChange={onChange}
             value={note.description}
-          />  
+          />
         </div>
         <div className="mb-3">
-          <label htmlFor="tag" className="form-label">
-            Tag
+          <label htmlFor="author" className="form-label">
+            author
           </label>
           <input
             type="text"
             className="form-control"
-            id="tag"
-            name="tag"
+            id="author"
+            name="author"
             onChange={onChange}
-            value={note.tag}
-          />  
+            value={note.author}
+          />
         </div>
-        <button disabled={note.title.length < 3 || note.description.length < 5} type="submit" className="btn btn-primary" onClick={handleClick}>
-          Add Note
+        <div className="mb-3">
+          <label htmlFor="bookID" className="form-label">
+            bookID
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            id="bookID"
+            name="bookID"
+            onChange={onChange}
+            value={note.bookID}
+          />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="quantity" className="form-label">
+            quantity
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            id="quantity"
+            name="quantity"
+            onChange={onChange}
+            value={note.quantity}
+          />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="borrower" className="form-label">
+            borrower
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            id="borrower"
+            name="borrower"
+            onChange={onChange}
+            value={note.borrower}
+          />
+        </div>
+        <button
+          disabled={note.title.length < 3 || note.description.length < 5}
+          type="submit"
+          className="btn btn-primary"
+          onClick={handleClick}
+        >
+          Add Record
         </button>
       </form>
     </div>

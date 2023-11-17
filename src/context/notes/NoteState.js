@@ -11,7 +11,7 @@ const NoteState = (props) => {
   // Get Notes
   const getNotes = async () => {
       // API CALL
-    const response = await fetch(`${host}/api/notes/fetchallnotes`, {
+    const response = await fetch(`${host}/api/notes/fetchallbooks`, {
       method: 'GET', 
       headers: {
         'Content-Type': 'application/json',
@@ -23,15 +23,29 @@ const NoteState = (props) => {
   };
 
   // Add a Note
-  const addNote = async (title, description, tag) => {
-      // API CALL
+  const addNote = async (
+    title,
+    description,
+    author,
+    bookID,
+    quantity,
+    borrower
+  ) => {
+    // API CALL
     const response = await fetch(`${host}/api/notes/addnote`, {
-      method: 'POST', 
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'auth-token': localStorage.getItem('token')
+        "Content-Type": "application/json",
+        "auth-token": localStorage.getItem("token"),
       },
-      body: JSON.stringify({title,description,tag}) 
+      body: JSON.stringify({
+        title,
+        description,
+        author,
+        bookID,
+        quantity,
+        borrower,
+      }),
     });
 
     const note = await response.json();

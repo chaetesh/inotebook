@@ -1,121 +1,119 @@
 const express = require("express");
 var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
-var fetchuser = require('../middleware/fetchuser')
-// Importing user model
-const User = require("../models/User");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
+const mysql = require("mysql2");
 
-const JWT_SECRET = "Aeteshis@goodboy"; 
+const JWT_SECRET = "Aeteshis@goodboy";
 
-// Create a user using POST "/api/auth/createuser".No login required
+const mysqlConfig = {
+  host: "localhost",
+  user: "root",
+  password: "root",
+  database: "app",
+};
+
+const connection = mysql.createConnection(mysqlConfig);
+
+// Create a user using POST "/api/auth/createuser". No login required
 router.post(
   "/createuser",
   [
     body("email", "Enter a Valid Email").isEmail(),
     body("name", "Enter a Valid name").isLength({ min: 3 }),
-    body("password", "Password atleast 5 Charecters").isLength({ min: 5 }),
+    body("password", "Password at least 5 Characters").isLength({ min: 5 }),
   ],
-//   We maked asynchronus function as we dont want to proceed further until current line executed completely
   async (req, res) => {
     let success = false;
-    // if there are errors return bad request and errors
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({success, errors: errors.array() });
+      return res.status(400).json({ success, errors: errors.array() });
     }
 
-    // check whether the use with this email address exits?
-    let user = await User.findOne({success,email:req.body.email});
-    if(user){
-        return res.status(400).json({success,error:"Email already Exists!!"})
-    }
     const salt = await bcrypt.genSalt(10);
-    secPass = await bcrypt.hash(req.body.password,salt);
-    // Creating new user in mongoDb
-    user =   User.create({
+    const secPass = await bcrypt.hash(req.body.password, salt);
+
+    const user = {
       name: req.body.name,
       email: req.body.email,
       password: secPass,
-    })
+    };
 
-    const data = {
-      user:{
-        id: user.id
+    // Inserting new user into MySQL
+    connection.query("INSERT INTO user SET ?", user, (error, results) => {
+      if (error) {
+        console.error(error.message);
+        return res.status(500).send("Internal Server error");
       }
-    }
-    // singing the token
-    const authtoken = jwt.sign(data,JWT_SECRET);
-    console.log(authtoken);
-    success = true;
-    // sending authtoken as response
-    res.json({success,authtoken});
 
+      const data = {
+        user: {
+          id: results.insertId,
+        },
+      };
+
+      const authtoken = jwt.sign(data, JWT_SECRET);
+      console.log(authtoken);
+      success = true;
+      res.json({ success, authtoken });
+    });
   }
 );
 
-// authenticate a user using POST "/api/auth/login".
-router.post( 
+// Authenticate a user using POST "/api/auth/login".
+router.post(
   "/login",
   [
     body("email", "Enter a Valid Email").isEmail(),
-    body("password", "password cannot be blank").exists(),
+    body("password", "Password cannot be blank").exists(),
   ],
   async (req, res) => {
     let success = false;
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const {email,password} = req.body;
-    try {
-      let user = await User.findOne({email});
-      if(!user){
-        return res.status(400).json({error:"Wrong Credentials!"});
-      }
-      
-      const passwordCompare = await bcrypt.compare(password,user.password);
-      if(!passwordCompare){
-        success = false;
-        return res.status(400).json({success,error:"Wrong Credentials!"});
-      }
+    const { email, password } = req.body;
 
-      const data = {
-        user:{
-          id: user.id
+    // Fetching user from MySQL based on email
+    connection.query(
+      "SELECT * FROM user WHERE email = ?",
+      [email],
+      async (error, results) => {
+        if (error) {
+          console.error(error.message);
+          return res.status(500).send("Internal Server error");
         }
+
+        if (results.length === 0) {
+          return res.status(400).json({ success, error: "Wrong Credentials!" });
+        }
+
+        const user = results[0];
+        const passwordCompare = await bcrypt.compare(password, user.password);
+
+        if (!passwordCompare) {
+          return res.status(400).json({ success, error: "Wrong Credentials!" });
+        }
+
+        const data = {
+          user: {
+            id: user.id,
+          },
+        };
+
+        const authtoken = jwt.sign(data, JWT_SECRET);
+        console.log(authtoken);
+        success = true;
+
+        res.json({ success, authtoken });
       }
-      const authtoken = jwt.sign(data,JWT_SECRET);
-      console.log(authtoken);
-      success = true;
-  
-      res.json({success,authtoken});
-
-    } catch (error) { 
-      console.error(error.message);
-      res.status(500).send("Internal Server error");
-    }
-
+    );
   }
 );
-
-// GET loggen in user details using POST "/api/auth/getuser".
-router.post( 
-  "/getuser",
-  // this is middleware, first fetchuser will run and later this function, it do have same req and res
-  fetchuser,
-  async (req, res) => {
-    try {
-      const userID = req.user.id;
-      const user = await User.findById(userID).select("-password");
-      res.json(user);
-    } catch (error) {
-      console.error(error.message);
-      res.status(500).send("Internal Server error");
-    }
-
-  })
 
 module.exports = router;
