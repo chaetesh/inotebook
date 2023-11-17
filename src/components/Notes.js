@@ -5,7 +5,7 @@ import AddNote from "./AddNote";
 import Notiflix from 'notiflix';
 import NoteItem from "./NoteItem";
 import { useNavigate } from "react-router-dom"
-
+ 
 const Notes = () => {
   const navigate = useNavigate()
   // The useRef is a hook that allows to directly create a reference to the DOM element in the functional component.
